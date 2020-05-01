@@ -23,7 +23,7 @@ class CacertCertstoreTest {
 
     CertStore certStore = CertStore.getInstance(DirectoryKeystoreProvider.TYPE, new DirectoryCertStoreParameters(etcSslCerts));
 
-    Collection<? extends Certificate> certificates = certStore.getCertificates(new AllCertificates());
+    Collection<? extends Certificate> certificates = certStore.getCertificates(null);
 
     assertFalse(certificates.isEmpty());
   }

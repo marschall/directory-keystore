@@ -15,7 +15,7 @@ public final class DirectoryKeystoreProvider extends Provider {
   public static final String TYPE = "directory";
 
   public DirectoryKeystoreProvider() {
-    super(NAME, 0.1d, "directory");
+    super(NAME, 0.1d, "directory (KeyStore and CertStore)");
     this.put("KeyStore." + TYPE, DirectoryKeystore.class.getName());
     this.put("CertStore." + TYPE, DirectoryCertStore.class.getName());
   }

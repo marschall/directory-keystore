@@ -22,7 +22,7 @@ import java.util.List;
 
 public class DirectoryCertStore extends CertStoreSpi {
 
-  private Path dirctory;
+  private Path directory;
 
   DirectoryCertStore(CertStoreParameters parameters) throws InvalidAlgorithmParameterException {
     super(parameters);
@@ -34,32 +34,42 @@ public class DirectoryCertStore extends CertStoreSpi {
   @Override
   public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) throws CertStoreException {
     List<Certificate> certificates = new ArrayList<>();
+    CertificateFactory factory = this.getX509CertificateFactory();
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(this.directory, "*.{pem,crt}}")) {
+      for (Path certificateFile : directoryStream) {
+        if (Files.isRegularFile(certificateFile)) {
+          Certificate certificate = this.loadCertificate(factory, certificateFile);
+          if ((selector == null) || selector.match(certificate)) {
+            certificates.add(certificate);
+          }
+        }
+      }
+    } catch (IOException e) {
+      throw new CertStoreException("could not load certificates from: " + this.directory, e);
+    }
+    return certificates;
+  }
+
+  private CertificateFactory getX509CertificateFactory() throws CertStoreException {
     CertificateFactory factory;
     try {
       factory = CertificateFactory.getInstance("X.509");
     } catch (CertificateException e) {
       throw new CertStoreException("could not create X.509 factory", e);
     }
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(this.dirctory, "*.{pem,crt}}")) {
-      for (Path certificateFile : directoryStream) {
-        if (Files.isRegularFile(certificateFile)) {
-          try (InputStream inputStream = Files.newInputStream(certificateFile)) { // TODO buffer?
-            Certificate certificate;
-            try {
-              certificate = factory.generateCertificate(inputStream);
-            } catch (CertificateException e) {
-              throw new CertStoreException("could not create load certificate from file: " + certificateFile, e);
-            }
-            if ((selector == null) || selector.match(certificate)) {
-              certificates.add(certificate);
-            }
-          }
-        }
+    return factory;
+  }
+
+  private Certificate loadCertificate(CertificateFactory factory, Path certificateFile) throws CertStoreException {
+    try (InputStream inputStream = Files.newInputStream(certificateFile)) { // TODO buffer?
+      try {
+        return factory.generateCertificate(inputStream);
+      } catch (CertificateException e) {
+        throw new CertStoreException("could not create load certificate from file: " + certificateFile, e);
       }
     } catch (IOException e) {
-      throw new CertStoreException("could not load certificates", e);
+      throw new CertStoreException("could not create load certificate from file: " + certificateFile, e);
     }
-    return certificates;
   }
 
   @Override
