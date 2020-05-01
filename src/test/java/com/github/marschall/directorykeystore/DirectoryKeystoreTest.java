@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,9 +24,7 @@ class DirectoryKeystoreTest {
     assumeTrue(Files.exists(etcSslCerts));
 
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
-    try (InputStream inputStream = Files.newInputStream(etcSslCerts, null)) { // TODO buffer
-      keyStore.load(inputStream, null);
-    }
+    keyStore.load(new DirectorLoadStoreParameter(etcSslCerts));
 
     Enumeration<String> aliases = keyStore.aliases();
     assertTrue(aliases.hasMoreElements());

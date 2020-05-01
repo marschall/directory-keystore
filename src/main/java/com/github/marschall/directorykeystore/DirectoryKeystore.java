@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Key;
+import java.security.KeyStore.LoadStoreParameter;
 import java.security.KeyStoreException;
 import java.security.KeyStoreSpi;
 import java.security.NoSuchAlgorithmException;
@@ -114,7 +115,13 @@ public class DirectoryKeystore extends KeyStoreSpi {
   public void engineLoad(InputStream stream, char[] password)
           throws IOException, NoSuchAlgorithmException, CertificateException {
     // TODO Auto-generated method stub
+  }
 
+  @Override
+  public void engineLoad(LoadStoreParameter param)
+          throws IOException, NoSuchAlgorithmException, CertificateException {
+    // TODO Auto-generated method stub
+    super.engineLoad(param);
   }
 
 }
