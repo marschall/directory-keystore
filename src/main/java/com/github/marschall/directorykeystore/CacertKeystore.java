@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 
-public class CacertKeystore extends KeyStoreSpi {
+final class CacertKeystore extends KeyStoreSpi {
 
   private List<Certificate> certificates;
 
