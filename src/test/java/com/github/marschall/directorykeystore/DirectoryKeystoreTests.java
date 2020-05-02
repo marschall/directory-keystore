@@ -44,6 +44,7 @@ class DirectoryKeystoreTests {
     while (aliases.hasMoreElements()) {
       String alias = aliases.nextElement();
       assertTrue(keyStore.containsAlias(alias));
+      assertTrue(keyStore.isCertificateEntry(alias));
 
       Date creationDate = keyStore.getCreationDate(alias);
       assertNotNull(creationDate);

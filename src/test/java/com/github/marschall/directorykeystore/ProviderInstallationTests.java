@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 class ProviderInstallationTests {
 
-
   @Test
   void getProvider() {
     assertNotNull(Security.getProvider(DirectoryKeystoreProvider.NAME));
