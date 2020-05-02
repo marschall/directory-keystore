@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-public class DirectoryKeystore extends KeyStoreSpi {
+public final class DirectoryKeystore extends KeyStoreSpi {
 
   private final Map<String, CertificateEntry> certificates;
 
@@ -141,7 +141,7 @@ public class DirectoryKeystore extends KeyStoreSpi {
 
     Map<String, CertificateEntry> certificates = new HashMap<>();
     CertificateFactory factory = this.getX509CertificateFactory();
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, "*.{pem,crt}}")) {
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, "*.{pem,crt}")) {
       for (Path certificateFile : directoryStream) {
         if (Files.isRegularFile(certificateFile)) {
           String fileName = certificateFile.getFileName().toString();

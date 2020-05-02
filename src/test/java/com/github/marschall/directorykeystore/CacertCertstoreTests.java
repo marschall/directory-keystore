@@ -3,6 +3,7 @@ package com.github.marschall.directorykeystore;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,10 +22,21 @@ class CacertCertstoreTests {
     Path etcSslCerts = Paths.get("/etc/ssl/certs");
     assumeTrue(Files.exists(etcSslCerts));
 
-    CertStore certStore = CertStore.getInstance(DirectoryKeystoreProvider.TYPE, new DirectoryCertStoreParameters(etcSslCerts));
+    this.checkCertStoreDirectory(etcSslCerts);
+  }
+
+  @Test
+  void etcPkiTlsCerts() throws GeneralSecurityException, IOException {
+    Path etcPkiTlsCerts = Paths.get("/etc/pki/tls/certs");
+    assumeTrue(Files.exists(etcPkiTlsCerts));
+
+    this.checkCertStoreDirectory(etcPkiTlsCerts);
+  }
+
+  private void checkCertStoreDirectory(Path directory) throws GeneralSecurityException {
+    CertStore certStore = CertStore.getInstance(DirectoryKeystoreProvider.TYPE, new DirectoryCertStoreParameters(directory));
 
     Collection<? extends Certificate> certificates = certStore.getCertificates(null);
-
     assertFalse(certificates.isEmpty());
   }
 

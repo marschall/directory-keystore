@@ -21,22 +21,23 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class DirectoryCertStore extends CertStoreSpi {
+public final class DirectoryCertStore extends CertStoreSpi {
 
-  private Path directory;
+  private final Path directory;
 
-  DirectoryCertStore(CertStoreParameters parameters) throws InvalidAlgorithmParameterException {
+  public DirectoryCertStore(CertStoreParameters parameters) throws InvalidAlgorithmParameterException {
     super(parameters);
     if (!(parameters instanceof DirectoryCertStoreParameters)) {
       throw new InvalidAlgorithmParameterException("parameters must be " + DirectoryCertStoreParameters.class.getName());
     }
+    this.directory = ((DirectoryCertStoreParameters) parameters).getDirectory();
   }
 
   @Override
   public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) throws CertStoreException {
     List<Certificate> certificates = new ArrayList<>();
     CertificateFactory factory = this.getX509CertificateFactory();
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(this.directory, "*.{pem,crt}}")) {
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(this.directory, "*.{pem,crt}")) {
       for (Path certificateFile : directoryStream) {
         if (Files.isRegularFile(certificateFile)) {
           Certificate certificate = this.loadCertificate(factory, certificateFile);
