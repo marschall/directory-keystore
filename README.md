@@ -54,7 +54,7 @@ The provider can be configured statically in the `java.security` file by adding 
 security.provider.N=directory
 ```
 
-`N` should be the value of the last provider incremented by 1. For Oracle/OpenJDK 9 on Linux `N` should likely be 13.
+`N` should be the value of the last provider incremented by 1. For OpenJDK 11 on Linux `N` should likely be 13.
 
 This can be done
  * [per JVM installation](https://docs.oracle.com/en/java/javase/11/security/howtoimplaprovider.html#GUID-831AA25F-F702-442D-A2E4-8DA6DEA16F33)
