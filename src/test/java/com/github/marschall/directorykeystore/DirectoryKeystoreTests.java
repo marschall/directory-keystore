@@ -24,8 +24,20 @@ class DirectoryKeystoreTests {
     Path etcSslCerts = Paths.get("/etc/ssl/certs");
     assumeTrue(Files.exists(etcSslCerts));
 
+    this.checkKeystoreDirectory(etcSslCerts);
+  }
+
+  @Test
+  void etcPkiTlsCerts() throws GeneralSecurityException, IOException {
+    Path etcPkiTlsCerts = Paths.get("/etc/pki/tls/certs");
+    assumeTrue(Files.exists(etcPkiTlsCerts));
+
+    this.checkKeystoreDirectory(etcPkiTlsCerts);
+  }
+
+  private void checkKeystoreDirectory(Path certificateDirectory) throws GeneralSecurityException, IOException {
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
-    keyStore.load(new DirectorLoadStoreParameter(etcSslCerts));
+    keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
 
     Enumeration<String> aliases = keyStore.aliases();
     assertTrue(aliases.hasMoreElements());
