@@ -3,10 +3,10 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.marschall</groupId>
   <artifactId>directory-keystore</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
   
   <name>Directory Keystore</name>
-  <inceptionYear>2018</inceptionYear>
+  <inceptionYear>2020</inceptionYear>
   <description>A keystore that is based on directories.</description>
 
   <url>https://github.com/marschall/directory-keystore</url>
@@ -112,6 +112,7 @@
           <links>
             <link>https://docs.oracle.com/javase/8/docs/api/</link>
           </links>
+          <release>8</release>
         </configuration>
         <executions>
           <execution>
@@ -136,6 +137,28 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>codes.rafael.modulemaker</groupId>
+        <artifactId>modulemaker-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>make-module</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <name>com.github.marschall.directorykeystore</name>
+          <exports>com.github.marschall.directorykeystore</exports>
+          <provides>
+            <provide>
+              <services>java.security.Provider</services>
+              <providers>com.github.marschall.directorykeystore.DirectoryKeystoreProvider</providers>
+            </provide>
+          </provides>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-source-plugin</artifactId>
         <executions>
           <execution>
@@ -149,7 +172,11 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>-Djava.security.properties=${basedir}/src/test/resources/additional.java.security</argLine>
+          <argLine>
+            -Djava.security.properties=${basedir}/src/test/resources/additional.java.security
+            --add-opens com.github.marschall.directorykeystore/com.github.marschall.directorykeystore=ALL-UNNAMED
+          </argLine>
+          <enableAssertions>true</enableAssertions>
         </configuration>
       </plugin>
       <plugin>
@@ -184,12 +211,22 @@
           <version>2.5.2</version>
         </plugin>
         <plugin>
+          <groupId>codes.rafael.modulemaker</groupId>
+          <artifactId>modulemaker-maven-plugin</artifactId>
+          <version>1.7</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-site-plugin</artifactId>
           <version>3.8.2</version>
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.22.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.jboss.jandex</groupId>
+          <artifactId>jandex-maven-plugin</artifactId>
+          <version>1.0.7</version>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
@@ -215,11 +252,6 @@
           <artifactId>maven-release-plugin</artifactId>
           <version>2.5.3</version>
         </plugin>
-        <plugin>
-          <groupId>org.jboss.jandex</groupId>
-          <artifactId>jandex-maven-plugin</artifactId>
-          <version>1.0.7</version>
-        </plugin>
         <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself. -->
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
@@ -239,6 +271,19 @@
                   </pluginExecutionFilter>
                   <action>
                     <ignore />
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>codes.rafael.modulemaker</groupId>
+                    <artifactId>modulemaker-maven-plugin</artifactId>
+                    <versionRange>[1.7,)</versionRange>
+                    <goals>
+                      <goal>make-module</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
                   </action>
                 </pluginExecution>
               </pluginExecutions>
