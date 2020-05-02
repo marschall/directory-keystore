@@ -1,5 +1,6 @@
 package com.github.marschall.directorykeystore;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -16,7 +17,7 @@ import java.util.Enumeration;
 
 import org.junit.jupiter.api.Test;
 
-class DirectoryKeystoreTest {
+class DirectoryKeystoreTests {
 
   @Test
   void etcSslCerts() throws GeneralSecurityException, IOException {
@@ -39,6 +40,12 @@ class DirectoryKeystoreTest {
       Certificate certificate = keyStore.getCertificate(alias);
       assertNotNull(certificate);
     }
+  }
+
+  @Test
+  void getAlias() {
+    assertEquals("abc", DirectoryKeystore.getAlias("abc.pem"));
+    assertEquals("abc", DirectoryKeystore.getAlias("abc.crt"));
   }
 
 }

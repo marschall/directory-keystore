@@ -3,6 +3,7 @@ package com.github.marschall.directorykeystore;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -11,23 +12,26 @@ import java.security.KeyStore.LoadStoreParameter;
 import java.security.KeyStoreException;
 import java.security.KeyStoreSpi;
 import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class DirectoryKeystore extends KeyStoreSpi {
 
-  private volatile Path directory;
+  private final Map<String, CertificateEntry> certificates; // TODO happens-before
+
+  public DirectoryKeystore() {
+    this.certificates = new HashMap<>();
+  }
 
   @Override
-  public Key engineGetKey(String alias, char[] password)
-          throws NoSuchAlgorithmException, UnrecoverableKeyException {
-    // TODO Auto-generated method stub
+  public Key engineGetKey(String alias, char[] password) {
     return null;
   }
 
@@ -38,26 +42,22 @@ public class DirectoryKeystore extends KeyStoreSpi {
 
   @Override
   public Certificate engineGetCertificate(String alias) {
-    Path certificatePath = this.getCertificatePath(alias);
-    if (!Files.exists(certificatePath)) {
+    CertificateEntry entry = this.certificates.get(alias);
+    if (entry != null) {
+      return entry.getCertificate();
+    } else {
       return null;
     }
-    CertificateFactory certificateFactory = this.getX509CertificateFactory();
-    return this.loadCertificate(certificateFactory, certificatePath);
   }
 
   @Override
   public Date engineGetCreationDate(String alias) {
-    Path certificatePath = this.getCertificatePath(alias);
-    Map<String, Object> attributes;
-    try {
-      attributes = Files.readAttributes(certificatePath, "creationTime");
-    } catch (IOException e) {
-      // per contract
+    CertificateEntry entry = this.certificates.get(alias);
+    if (entry != null) {
+      return entry.getCreationDate();
+    } else {
       return null;
     }
-    FileTime creationTime = (FileTime) attributes.get("creationTime");
-    return new Date(creationTime.toMillis());
   }
 
   @Override
@@ -88,72 +88,33 @@ public class DirectoryKeystore extends KeyStoreSpi {
 
   @Override
   public Enumeration<String> engineAliases() {
-    // TODO Auto-generated method stub
-    return null;
+    return Collections.enumeration(this.certificates.keySet());
   }
 
   @Override
   public boolean engineContainsAlias(String alias) {
-    // TODO Auto-generated method stub
-    return false;
+    return this.certificates.containsKey(alias);
   }
 
   @Override
   public int engineSize() {
-    // TODO Auto-generated method stub
-    return 0;
+    return this.certificates.size();
   }
 
   @Override
   public boolean engineIsKeyEntry(String alias) {
-    // TODO Auto-generated method stub
     return false;
   }
 
   @Override
   public boolean engineIsCertificateEntry(String alias) {
-    // TODO Auto-generated method stub
-    return false;
+    return this.certificates.containsKey(alias);
   }
 
   @Override
   public String engineGetCertificateAlias(Certificate cert) {
     // TODO Auto-generated method stub
     return null;
-  }
-
-  @Override
-  public void engineStore(OutputStream stream, char[] password)
-          throws IOException, NoSuchAlgorithmException, CertificateException {
-    // TODO Auto-generated method stub
-
-  }
-
-  private Path getCertificatePath(String alias) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  private Certificate loadCertificate(CertificateFactory factory, Path certificateFile) {
-    try (InputStream inputStream = Files.newInputStream(certificateFile)) { // TODO buffer?
-      try {
-        return factory.generateCertificate(inputStream);
-      } catch (CertificateException e) {
-        throw new IllegalStateException("could not create load certificate from file: " + certificateFile, e);
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("could not create load certificate from file: " + certificateFile, e);
-    }
-  }
-
-  private CertificateFactory getX509CertificateFactory() {
-    CertificateFactory factory;
-    try {
-      factory = CertificateFactory.getInstance("X.509");
-    } catch (CertificateException e) {
-      throw new IllegalStateException("could not create X.509 factory", e);
-    }
-    return factory;
   }
 
   @Override
@@ -168,7 +129,94 @@ public class DirectoryKeystore extends KeyStoreSpi {
     if (!(param instanceof DirectorLoadStoreParameter)) {
       throw new IllegalArgumentException("parameter must be a " + DirectorLoadStoreParameter.class);
     }
-    this.directory = ((DirectorLoadStoreParameter) param).getDirectory();
+    Path directory = ((DirectorLoadStoreParameter) param).getDirectory();
+
+    Map<String, CertificateEntry> certificates = new HashMap<>();
+    CertificateFactory factory = this.getX509CertificateFactory();
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, "*.{pem,crt}}")) {
+      for (Path certificateFile : directoryStream) {
+        if (Files.isRegularFile(certificateFile)) {
+          String fileName = certificateFile.getFileName().toString();
+          if (fileName.length() > 4) { // skip ".pem" and ".crt"
+            Certificate certificate = loadCertificate(factory, certificateFile);
+            Date creationDate = getCreationDate(certificateFile);
+            String alias = getAlias(fileName);
+            // TODO check pem replaces crt with same name
+            certificates.put(alias, new CertificateEntry(creationDate, certificate));
+          }
+        }
+      }
+    }
+    synchronized (this.certificates) {
+      this.certificates.clear();
+      this.certificates.putAll(certificates);
+    }
+  }
+
+
+  static String getAlias(String fileName) {
+    return fileName.substring(0, fileName.lastIndexOf('.'));
+  }
+
+  @Override
+  public void engineStore(OutputStream stream, char[] password) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public void engineStore(LoadStoreParameter param)
+          throws IOException, NoSuchAlgorithmException, CertificateException {
+    Objects.requireNonNull(param, "param");
+    if (!(param instanceof DirectorLoadStoreParameter)) {
+      throw new IllegalArgumentException("parameter must be a " + DirectorLoadStoreParameter.class);
+    }
+    Path directory = ((DirectorLoadStoreParameter) param).getDirectory();
+  }
+
+
+
+  private static Certificate loadCertificate(CertificateFactory factory, Path certificateFile) throws IOException, CertificateException {
+    try (InputStream inputStream = Files.newInputStream(certificateFile)) { // TODO buffer?
+      return factory.generateCertificate(inputStream);
+    }
+  }
+
+
+  private CertificateFactory getX509CertificateFactory() throws CertificateException {
+    return CertificateFactory.getInstance("X.509");
+  }
+
+  private static Date getCreationDate(Path path) {
+    Map<String, Object> attributes;
+    try {
+      attributes = Files.readAttributes(path, "creationTime");
+    } catch (IOException e) {
+      // per contract
+      return null;
+    }
+    FileTime creationTime = (FileTime) attributes.get("creationTime");
+    return new Date(creationTime.toMillis());
+  }
+
+  static final class CertificateEntry {
+
+    private final Date creationDate;
+
+    private final Certificate certificate;
+
+    CertificateEntry(Date creationDate, Certificate certificate) {
+      this.creationDate = creationDate;
+      this.certificate = certificate;
+    }
+
+    Date getCreationDate() {
+      return this.creationDate;
+    }
+
+    Certificate getCertificate() {
+      return this.certificate;
+    }
+
   }
 
 }

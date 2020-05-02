@@ -34,8 +34,7 @@ final class CacertCertstore extends CertStoreSpi {
   }
 
   @Override
-  public Collection<? extends Certificate> engineGetCertificates(
-          CertSelector selector) throws CertStoreException {
+  public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) throws CertStoreException {
     if (selector == null) {
       return new ArrayList<>(this.certificates);
     }
