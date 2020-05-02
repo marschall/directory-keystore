@@ -1,5 +1,6 @@
 package com.github.marschall.directorykeystore;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.DirectoryStream;
@@ -61,9 +62,10 @@ public class DirectoryCertStore extends CertStoreSpi {
   }
 
   private Certificate loadCertificate(CertificateFactory factory, Path certificateFile) throws CertStoreException {
-    try (InputStream inputStream = Files.newInputStream(certificateFile)) { // TODO buffer?
+    try (InputStream inputStream = Files.newInputStream(certificateFile);
+         BufferedInputStream buffered = new BufferedInputStream(inputStream)) {
       try {
-        return factory.generateCertificate(inputStream);
+        return factory.generateCertificate(buffered);
       } catch (CertificateException e) {
         throw new CertStoreException("could not create load certificate from file: " + certificateFile, e);
       }

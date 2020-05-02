@@ -1,5 +1,6 @@
 package com.github.marschall.directorykeystore;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,14 +21,15 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 
 public class DirectoryKeystore extends KeyStoreSpi {
 
-  private final Map<String, CertificateEntry> certificates; // TODO happens-before
+  private final Map<String, CertificateEntry> certificates;
 
   public DirectoryKeystore() {
-    this.certificates = new HashMap<>();
+    this.certificates = Collections.synchronizedMap(new HashMap<>());
   }
 
   @Override
@@ -113,7 +115,13 @@ public class DirectoryKeystore extends KeyStoreSpi {
 
   @Override
   public String engineGetCertificateAlias(Certificate cert) {
-    // TODO Auto-generated method stub
+    synchronized (this.certificates) {
+      for (Entry<String, CertificateEntry> entry : this.certificates.entrySet()) {
+        if (entry.getValue().getCertificate().equals(cert)) {
+          return entry.getKey();
+        }
+      }
+    }
     return null;
   }
 
@@ -176,8 +184,9 @@ public class DirectoryKeystore extends KeyStoreSpi {
 
 
   private static Certificate loadCertificate(CertificateFactory factory, Path certificateFile) throws IOException, CertificateException {
-    try (InputStream inputStream = Files.newInputStream(certificateFile)) { // TODO buffer?
-      return factory.generateCertificate(inputStream);
+    try (InputStream inputStream = Files.newInputStream(certificateFile);
+         BufferedInputStream buffered = new BufferedInputStream(inputStream)) {
+      return factory.generateCertificate(buffered);
     }
   }
 
