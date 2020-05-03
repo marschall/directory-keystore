@@ -296,13 +296,11 @@ public final class DirectoryKeystore extends KeyStoreSpi {
 
   private static void saveCertificateAsPem(Certificate certificate, Path certificateFile) throws IOException, CertificateEncodingException {
     try (OutputStream outputStream = Files.newOutputStream(certificateFile);
-         BufferedOutputStream buffered = new BufferedOutputStream(outputStream, 2048)) { // 2048 should be enough for most certifcates
+         BufferedOutputStream buffered = new BufferedOutputStream(outputStream, 2048)) { // 2048 should be enough for most certificates
       buffered.write(BEGIN_CERTIFICATE);
       buffered.write(LINE_SEPARATOR);
       byte[] encoded = Base64.getMimeEncoder(PEM_LINE_ENGTH, LINE_SEPARATOR).encode(certificate.getEncoded());
-      for (int i = 0; i < encoded.length; i += PEM_LINE_ENGTH) {
-        buffered.write(encoded, i, Math.min(64, encoded.length - i));
-      }
+      buffered.write(encoded);
       buffered.write(END_CERTIFICATE);
       buffered.write(LINE_SEPARATOR);
     }

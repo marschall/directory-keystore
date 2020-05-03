@@ -15,7 +15,7 @@ import java.util.Collection;
 
 import org.junit.jupiter.api.Test;
 
-class CacertCertstoreTests {
+class DirectoryCertStoreTests {
 
   @Test
   void etcSslCerts() throws GeneralSecurityException {
