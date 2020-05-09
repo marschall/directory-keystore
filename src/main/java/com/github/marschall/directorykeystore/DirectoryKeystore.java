@@ -2,13 +2,16 @@ package com.github.marschall.directorykeystore;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -24,6 +27,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -36,6 +40,10 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public final class DirectoryKeystore extends KeyStoreSpi {
+
+  // TODO watch service
+
+  private static final String EXTENSIONS_GLOB = "*.{pem,crt,key}";
 
   // https://tools.ietf.org/html/rfc1421
   // with each line except the last containing exactly 64
@@ -53,6 +61,9 @@ public final class DirectoryKeystore extends KeyStoreSpi {
 
   private final ReadWriteLock entriesLock;
 
+  /**
+   * Default constructor for JCA, should not be called directly.
+   */
   public DirectoryKeystore() {
     this.entries = new HashMap<>();
     this.entriesLock = new ReentrantReadWriteLock();
@@ -70,7 +81,15 @@ public final class DirectoryKeystore extends KeyStoreSpi {
 
   @Override
   public Certificate[] engineGetCertificateChain(String alias) {
-    return null;
+    KeystoreEntry entry = this.getEntry(alias);
+    if (entry instanceof CertificateEntry) {
+      return new Certificate[] {((CertificateEntry) entry).getCertificate()};
+    } else if (entry instanceof CertificateChainEntry) {
+      // TODO copy?
+      return ((CertificateChainEntry) entry).getCertificates();
+    } else {
+      return null;
+    }
   }
 
   private KeystoreEntry getEntry(String alias) {
@@ -88,6 +107,8 @@ public final class DirectoryKeystore extends KeyStoreSpi {
     KeystoreEntry entry = this.getEntry(alias);
     if (entry instanceof CertificateEntry) {
       return ((CertificateEntry) entry).getCertificate();
+    } else if (entry instanceof CertificateChainEntry) {
+      return ((CertificateChainEntry) entry).getCertificates()[0];
     } else {
       return null;
     }
@@ -165,13 +186,14 @@ public final class DirectoryKeystore extends KeyStoreSpi {
 
   @Override
   public boolean engineIsKeyEntry(String alias) {
-    return false;
+    KeystoreEntry entry = this.getEntry(alias);
+    return entry instanceof KeyEntry;
   }
 
   @Override
   public boolean engineIsCertificateEntry(String alias) {
     KeystoreEntry entry = this.getEntry(alias);
-    return entry instanceof CertificateEntry;
+    return (entry instanceof CertificateEntry) || (entry instanceof CertificateChainEntry);
   }
 
   @Override
@@ -195,54 +217,47 @@ public final class DirectoryKeystore extends KeyStoreSpi {
   }
 
   @Override
-  public void engineLoad(InputStream stream, char[] password) {
-    throw new UnsupportedOperationException();
+  public void engineLoad(InputStream stream, char[] password) throws IOException, NoSuchAlgorithmException, CertificateException {
+    if (stream == null) {
+      this.initializeEmpty();
+    } else {
+      // intentionally don't close as call has to close
+      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream), 1024); // use default charset
+      String location = bufferedReader.readLine();
+      LoadStoreParameter loadStoreParameter = new DirectorLoadStoreParameter(Paths.get(location));
+      this.engineLoad(loadStoreParameter);
+    }
   }
 
   @Override
-  public void engineLoad(LoadStoreParameter param)
-          throws IOException, NoSuchAlgorithmException, CertificateException {
-    Objects.requireNonNull(param, "param");
-    if (!(param instanceof DirectorLoadStoreParameter)) {
-      throw new IllegalArgumentException("parameter must be a " + DirectorLoadStoreParameter.class);
+  public void engineLoad(LoadStoreParameter param) throws IOException, NoSuchAlgorithmException, CertificateException {
+    if (param == null) {
+      this.initializeEmpty();
     }
     Path directory = ((DirectorLoadStoreParameter) param).getDirectory();
 
-    Map<String, KeystoreEntry> certificates = new HashMap<>();
+    Map<String, KeystoreEntry> loadedEntries = new HashMap<>();
 
     // load certificates
     CertificateFactory certificateFactory = this.getX509CertificateFactory();
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, "*.{pem,crt}")) {
+    KeyFactory keyFactory = this.getKeyFactory();
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, EXTENSIONS_GLOB)) {
       for (Path certificateFile : directoryStream) {
         if (Files.isRegularFile(certificateFile)) {
           String fileName = certificateFile.getFileName().toString();
-          if (fileName.length() > 4) { // skip ".pem" and ".crt"
-            Certificate certificate = loadCertificate(certificateFactory, certificateFile);
+          if (fileName.length() > 4) { // skip ".key" ".pem" and ".crt"
             Date creationDate = getCreationDate(certificateFile);
-            String alias = getAlias(fileName);
-            // TODO check pem replaces crt with same name
-            certificates.put(alias, new CertificateEntry(creationDate, certificate));
-          }
-        }
-      }
-    }
-
-    // load keys
-    KeyFactory keyFactory = this.getKeyFactory();
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, "*.key")) {
-      for (Path keyFile : directoryStream) {
-        if (Files.isRegularFile(keyFile)) {
-          String fileName = keyFile.getFileName().toString();
-          if (fileName.length() > 4) { // skip ".key"
-            Key key;
-            try {
-              key = loadKey(keyFactory, keyFile);
-            } catch (InvalidKeySpecException e) {
-              throw new CertificateException("could not load key from:" + keyFile, e);
+            KeystoreEntry entry;
+            if (fileName.endsWith(".key")) {
+              entry = this.loadKeyEntry(directory, creationDate, keyFactory);
+            } else if (fileName.endsWith(".pem") || fileName.endsWith(".crt")) {
+              entry = this.loadCertificateEntry(certificateFile, creationDate, certificateFactory);
+            } else {
+              throw new IllegalStateException("unknown file extension: " + certificateFile);
             }
-            Date creationDate = getCreationDate(keyFile);
+
             String alias = getAlias(fileName);
-            certificates.put(alias, new KeyEntry(creationDate, key));
+            loadedEntries.put(alias, entry);
           }
         }
       }
@@ -252,7 +267,42 @@ public final class DirectoryKeystore extends KeyStoreSpi {
     writeLock.lock();
     try {
       this.entries.clear();
-      this.entries.putAll(certificates);
+      this.entries.putAll(loadedEntries);
+    } finally {
+      writeLock.unlock();
+    }
+  }
+
+  private KeystoreEntry loadCertificateEntry(Path certificateFile, Date creationDate, CertificateFactory certificateFactory)
+          throws IOException, CertificateException {
+
+    Collection<? extends Certificate> certificates = loadCertificates(certificateFactory, certificateFile);
+    if (certificates.size() == 0) {
+      return new EmptyEntry(creationDate);
+    } else if (certificates.size() == 1) {
+      return new CertificateEntry(creationDate, certificates.iterator().next());
+    } else {
+      return new CertificateChainEntry(creationDate, certificates.toArray(new Certificate[0]));
+    }
+  }
+
+  private KeystoreEntry loadKeyEntry(Path keyFile, Date creationDate, KeyFactory keyFactory)
+          throws IOException, CertificateException {
+
+    Key key;
+    try {
+      key = loadKey(keyFactory, keyFile);
+    } catch (InvalidKeySpecException e) {
+      throw new CertificateException("could not load key from:" + keyFile, e);
+    }
+    return new KeyEntry(creationDate, key);
+  }
+
+  private void initializeEmpty() {
+    Lock writeLock = this.entriesLock.writeLock();
+    writeLock.lock();
+    try {
+      this.entries.clear();
     } finally {
       writeLock.unlock();
     }
@@ -276,12 +326,25 @@ public final class DirectoryKeystore extends KeyStoreSpi {
       throw new IllegalArgumentException("parameter must be a " + DirectorLoadStoreParameter.class);
     }
     Path directory = ((DirectorLoadStoreParameter) param).getDirectory();
+    Files.createDirectories(directory);
+
+    // delete current keystore entries
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, EXTENSIONS_GLOB)) {
+      for (Path keystoreFile : directoryStream) {
+        if (!Files.isDirectory(keystoreFile)) {
+          String fileName = keystoreFile.getFileName().toString();
+          if (fileName.length() > 4) { // skip ".key" ".pem" and ".crt" because they also won't be loaded
+            Files.delete(keystoreFile);
+          }
+        }
+      }
+    }
   }
 
-  private static Certificate loadCertificate(CertificateFactory factory, Path certificateFile) throws IOException, CertificateException {
+  private static Collection<? extends Certificate> loadCertificates(CertificateFactory factory, Path certificateFile) throws IOException, CertificateException {
     try (InputStream inputStream = Files.newInputStream(certificateFile);
          BufferedInputStream buffered = new BufferedInputStream(inputStream)) {
-      return factory.generateCertificate(buffered);
+      return factory.generateCertificates(buffered);
     }
   }
 
@@ -347,6 +410,14 @@ public final class DirectoryKeystore extends KeyStoreSpi {
 
   }
 
+  static final class EmptyEntry extends KeystoreEntry {
+
+    EmptyEntry(Date creationDate) {
+      super(creationDate);
+    }
+
+  }
+
   static final class CertificateEntry extends KeystoreEntry {
 
     private final Certificate certificate;
@@ -358,6 +429,21 @@ public final class DirectoryKeystore extends KeyStoreSpi {
 
     Certificate getCertificate() {
       return this.certificate;
+    }
+
+  }
+
+  static final class CertificateChainEntry extends KeystoreEntry {
+
+    private final Certificate[] certificates;
+
+    CertificateChainEntry(Date creationDate, Certificate[] certificates) {
+      super(creationDate);
+      this.certificates = certificates;
+    }
+
+    Certificate[] getCertificates() {
+      return this.certificates;
     }
 
   }

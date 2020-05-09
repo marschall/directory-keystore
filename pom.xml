@@ -53,6 +53,12 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.github.marschall</groupId>
+      <artifactId>memoryfilesystem</artifactId>
+      <version>2.1.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <ciManagement>
