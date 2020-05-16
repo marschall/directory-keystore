@@ -1,0 +1,2 @@
+openssl pkcs12 -export -nokeys -in empty.crt -passin pass:changeit -out empty.p12
+keytool -importcert -file empty.crt -alias empty -keystore empty.p12 -storetype pkcs12 -storepass changeit

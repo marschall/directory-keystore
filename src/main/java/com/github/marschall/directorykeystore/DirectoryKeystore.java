@@ -43,7 +43,10 @@ public final class DirectoryKeystore extends KeyStoreSpi {
 
   // TODO watch service
 
+  // file names
+  // https://support.ssl.com/Knowledgebase/Article/View/19/0/der-vs-crt-vs-cer-vs-pem-certificates-and-how-to-convert-them
   private static final String EXTENSIONS_GLOB = "*.{pem,crt,key}";
+
 
   // https://tools.ietf.org/html/rfc1421
   // with each line except the last containing exactly 64
@@ -82,8 +85,8 @@ public final class DirectoryKeystore extends KeyStoreSpi {
   @Override
   public Certificate[] engineGetCertificateChain(String alias) {
     KeystoreEntry entry = this.getEntry(alias);
-    if (entry instanceof CertificateEntry) {
-      return new Certificate[] {((CertificateEntry) entry).getCertificate()};
+    if (entry instanceof SingleCertificateEntry) {
+      return new Certificate[] {((SingleCertificateEntry) entry).getCertificate()};
     } else if (entry instanceof CertificateChainEntry) {
       // TODO copy?
       return ((CertificateChainEntry) entry).getCertificates();
@@ -105,8 +108,8 @@ public final class DirectoryKeystore extends KeyStoreSpi {
   @Override
   public Certificate engineGetCertificate(String alias) {
     KeystoreEntry entry = this.getEntry(alias);
-    if (entry instanceof CertificateEntry) {
-      return ((CertificateEntry) entry).getCertificate();
+    if (entry instanceof SingleCertificateEntry) {
+      return ((SingleCertificateEntry) entry).getCertificate();
     } else if (entry instanceof CertificateChainEntry) {
       return ((CertificateChainEntry) entry).getCertificates()[0];
     } else {
@@ -193,7 +196,7 @@ public final class DirectoryKeystore extends KeyStoreSpi {
   @Override
   public boolean engineIsCertificateEntry(String alias) {
     KeystoreEntry entry = this.getEntry(alias);
-    return (entry instanceof CertificateEntry) || (entry instanceof CertificateChainEntry);
+    return (entry instanceof SingleCertificateEntry) || (entry instanceof CertificateChainEntry);
   }
 
   @Override
@@ -203,8 +206,8 @@ public final class DirectoryKeystore extends KeyStoreSpi {
     try {
       for (Entry<String, KeystoreEntry> entry : this.entries.entrySet()) {
         KeystoreEntry keystoreEntry = entry.getValue();
-        if (keystoreEntry instanceof CertificateEntry) {
-          CertificateEntry certificateEntry = (CertificateEntry) keystoreEntry;
+        if (keystoreEntry instanceof SingleCertificateEntry) {
+          SingleCertificateEntry certificateEntry = (SingleCertificateEntry) keystoreEntry;
           if (certificateEntry.getCertificate().equals(cert)) {
             return entry.getKey();
           }
@@ -233,12 +236,12 @@ public final class DirectoryKeystore extends KeyStoreSpi {
   public void engineLoad(LoadStoreParameter param) throws IOException, NoSuchAlgorithmException, CertificateException {
     if (param == null) {
       this.initializeEmpty();
+      return;
     }
     Path directory = ((DirectorLoadStoreParameter) param).getDirectory();
 
     Map<String, KeystoreEntry> loadedEntries = new HashMap<>();
 
-    // load certificates
     CertificateFactory certificateFactory = this.getX509CertificateFactory();
     KeyFactory keyFactory = this.getKeyFactory();
     try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(directory, EXTENSIONS_GLOB)) {
@@ -251,43 +254,48 @@ public final class DirectoryKeystore extends KeyStoreSpi {
             if (fileName.endsWith(".key")) {
               entry = this.loadKeyEntry(directory, creationDate, keyFactory);
             } else if (fileName.endsWith(".pem") || fileName.endsWith(".crt")) {
-              entry = this.loadCertificateEntry(certificateFile, creationDate, certificateFactory);
+              CertificateEntry certificateEntry = this.loadCertificateEntry(certificateFile, creationDate, certificateFactory);
+              if (certificateEntry.isEmpty()) {
+                entry = null;
+              } else {
+                entry = certificateEntry;
+              }
             } else {
               throw new IllegalStateException("unknown file extension: " + certificateFile);
             }
 
-            String alias = getAlias(fileName);
-            loadedEntries.put(alias, entry);
+            if (entry != null) {
+              String alias = getAlias(fileName);
+              loadedEntries.put(alias, entry);
+            }
           }
         }
       }
     }
 
-    Lock writeLock = this.entriesLock.writeLock();
-    writeLock.lock();
-    try {
-      this.entries.clear();
-      this.entries.putAll(loadedEntries);
-    } finally {
-      writeLock.unlock();
-    }
+    this.initializeFromMap(loadedEntries);
   }
 
-  private KeystoreEntry loadCertificateEntry(Path certificateFile, Date creationDate, CertificateFactory certificateFactory)
+  private CertificateEntry loadCertificateEntry(Path certificateFile, Date creationDate, CertificateFactory certificateFactory)
           throws IOException, CertificateException {
 
     Collection<? extends Certificate> certificates = loadCertificates(certificateFactory, certificateFile);
-    if (certificates.size() == 0) {
-      return new EmptyEntry(creationDate);
-    } else if (certificates.size() == 1) {
-      return new CertificateEntry(creationDate, certificates.iterator().next());
-    } else {
-      return new CertificateChainEntry(creationDate, certificates.toArray(new Certificate[0]));
+    switch (certificates.size()) {
+      case 0:
+        return new EmptyCertificateChainEntry(creationDate);
+      case 1:
+        return new SingleCertificateEntry(creationDate, certificates.iterator().next());
+      default:
+        return new CertificateChainEntry(creationDate, certificates.toArray(new Certificate[0]));
     }
   }
 
   private KeystoreEntry loadKeyEntry(Path keyFile, Date creationDate, KeyFactory keyFactory)
           throws IOException, CertificateException {
+
+    // https://stackoverflow.com/questions/20065304/differences-between-begin-rsa-private-key-and-begin-private-key
+    // https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#keyfactory-algorithms
+    // https://crypto.stackexchange.com/questions/46893/is-there-a-specification-for-the-begin-rsa-private-key-format
 
     Key key;
     try {
@@ -299,15 +307,19 @@ public final class DirectoryKeystore extends KeyStoreSpi {
   }
 
   private void initializeEmpty() {
+    this.initializeFromMap(Collections.emptyMap());
+  }
+
+  private void initializeFromMap(Map<String, KeystoreEntry> newEntries) {
     Lock writeLock = this.entriesLock.writeLock();
     writeLock.lock();
     try {
       this.entries.clear();
+      this.entries.putAll(newEntries);
     } finally {
       writeLock.unlock();
     }
   }
-
 
   static String getAlias(String fileName) {
     return fileName.substring(0, fileName.lastIndexOf('.'));
@@ -352,6 +364,7 @@ public final class DirectoryKeystore extends KeyStoreSpi {
     try (InputStream inputStream = Files.newInputStream(keyFile);
          BufferedInputStream buffered = new BufferedInputStream(inputStream)) {
       byte[] allBytes = Files.readAllBytes(keyFile);
+      // X509EncodedKeySpec for PKCS#1
       PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getMimeDecoder().decode(allBytes));
       return factory.generatePrivate(keySpec);
     }
@@ -396,7 +409,7 @@ public final class DirectoryKeystore extends KeyStoreSpi {
     return new Date(creationTime.toMillis());
   }
 
-  static class KeystoreEntry {
+  static abstract class KeystoreEntry {
 
     private final Date creationDate;
 
@@ -410,19 +423,34 @@ public final class DirectoryKeystore extends KeyStoreSpi {
 
   }
 
-  static final class EmptyEntry extends KeystoreEntry {
+  static abstract class CertificateEntry extends KeystoreEntry {
 
-    EmptyEntry(Date creationDate) {
+    CertificateEntry(Date creationDate) {
       super(creationDate);
+    }
+
+    abstract boolean isEmpty();
+
+  }
+
+  static final class EmptyCertificateChainEntry extends CertificateEntry {
+
+    EmptyCertificateChainEntry(Date creationDate) {
+      super(creationDate);
+    }
+
+    @Override
+    boolean isEmpty() {
+      return true;
     }
 
   }
 
-  static final class CertificateEntry extends KeystoreEntry {
+  static final class SingleCertificateEntry extends CertificateEntry {
 
     private final Certificate certificate;
 
-    CertificateEntry(Date creationDate, Certificate certificate) {
+    SingleCertificateEntry(Date creationDate, Certificate certificate) {
       super(creationDate);
       this.certificate = certificate;
     }
@@ -431,9 +459,14 @@ public final class DirectoryKeystore extends KeyStoreSpi {
       return this.certificate;
     }
 
+    @Override
+    boolean isEmpty() {
+      return false;
+    }
+
   }
 
-  static final class CertificateChainEntry extends KeystoreEntry {
+  static final class CertificateChainEntry extends CertificateEntry {
 
     private final Certificate[] certificates;
 
@@ -444,6 +477,11 @@ public final class DirectoryKeystore extends KeyStoreSpi {
 
     Certificate[] getCertificates() {
       return this.certificates;
+    }
+
+    @Override
+    boolean isEmpty() {
+      return false;
     }
 
   }

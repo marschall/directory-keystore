@@ -1,7 +1,9 @@
 package com.github.marschall.directorykeystore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -42,10 +44,32 @@ class DirectoryKeystoreTests {
     this.checkKeystoreDirectory(etcPkiTlsCerts);
   }
 
+  @Test
+  void loadCertificateChain() throws GeneralSecurityException, IOException {
+    Path certificateDirectory = Paths.get("src", "test", "resources", "sample-keystore", "certificate-chains");
+    KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
+    keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
+
+    assertEquals(1, keyStore.size());
+
+    assertFalse(keyStore.containsAlias("empty"));
+    assertTrue(keyStore.containsAlias("ca-certificates"));
+
+    assertFalse(keyStore.isCertificateEntry("empty"));
+    assertTrue(keyStore.isCertificateEntry("ca-certificates"));
+
+    assertNull(keyStore.getCertificateChain("empty"));
+    assertNotNull(keyStore.getCertificateChain("ca-certificates"));
+
+    assertNull(keyStore.getCertificate("empty"));
+    assertNotNull(keyStore.getCertificate("ca-certificates"));
+  }
+
   private void checkKeystoreDirectory(Path certificateDirectory) throws GeneralSecurityException, IOException {
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
     keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
 
+    assertTrue(keyStore.size() > 0);
     Enumeration<String> aliases = keyStore.aliases();
     assertTrue(aliases.hasMoreElements());
     while (aliases.hasMoreElements()) {
@@ -63,6 +87,9 @@ class DirectoryKeystoreTests {
       Certificate[] certificateChain = keyStore.getCertificateChain(alias);
       assertNotNull(certificateChain);
       assertTrue(certificateChain.length > 0);
+      if (certificateChain.length > 1) {
+        System.out.println(alias + ": " + certificateChain.length);
+      }
     }
   }
 
@@ -84,6 +111,7 @@ class DirectoryKeystoreTests {
       Files.createDirectories(target);
 
       KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
+      keyStore.load(null);
       keyStore.store(new DirectorLoadStoreParameter(target));
     }
   }
