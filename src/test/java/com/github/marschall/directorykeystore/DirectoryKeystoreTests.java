@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +20,8 @@ import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -84,7 +87,7 @@ class DirectoryKeystoreTests {
     keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
 
     assertEquals(1, keyStore.size());
-    // TODO validate aliases()
+    assertEquals(Arrays.asList("ca-certificates"), enumerationToList(keyStore.aliases()));
 
     assertFalse(keyStore.containsAlias("empty"));
     assertTrue(keyStore.containsAlias("ca-certificates"));
@@ -117,12 +120,21 @@ class DirectoryKeystoreTests {
       KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
       keyStore.load(new DirectorLoadStoreParameter(source));
 
-      // TODO validate aliases()
       assertEquals(1, keyStore.size());
+      assertEquals(Arrays.asList("letsencrypt-org"), enumerationToList(keyStore.aliases()));
       assertTrue(keyStore.containsAlias("letsencrypt-org"));
       assertTrue(keyStore.isCertificateEntry("letsencrypt-org"));
       assertNotNull(keyStore.getCertificate("letsencrypt-org"));
     }
+  }
+
+  private static <E> List<E> enumerationToList(Enumeration<E> enumeration) {
+    List<E> result = new ArrayList<>();
+    while (enumeration.hasMoreElements()) {
+      E next = enumeration.nextElement();
+      result.add(next);
+    }
+    return result;
   }
 
   @Test
@@ -146,6 +158,10 @@ class DirectoryKeystoreTests {
                         .collect(toList());
       }
       assertEquals(Collections.singletonList("letsencrypt-org.pem"), entries);
+
+      String expected = new String(Files.readAllBytes(certificatePath), StandardCharsets.US_ASCII);
+      String actual = new String(Files.readAllBytes(target.resolve(certificatePath.getFileName().toString())), StandardCharsets.US_ASCII);
+      assertEquals(expected, actual);
     }
   }
 

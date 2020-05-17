@@ -3,3 +3,5 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout privateKey.k
 openssl rsa -in privateKey.key -outform PEM -pubout -out publicKey.pkcs8
 # https://gist.github.com/gtaban/410db2351e52ae36a2a636f3cc6f86ac
 openssl rsa -pubin -in publicKey.pkcs8 -RSAPublicKey_out > publicKey.key
+
+openssl x509 -pubkey -noout -in certificate.crt  > rsa-publicKey.key
