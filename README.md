@@ -13,24 +13,24 @@ KeyStore keyStore = KeyStore.getInstance("directory"); // DirectoryKeystoreProvi
 keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
 ```
 
-## Configuration
+## Installation
 
 The provider can be configured in two different ways
 
 1. programmatic configuration
 1. static configuration
 
-### Programmatic Configuration
+### Programmatic Installation
 
-The provider can be registered programmatically using
+The provider can be installed programmatically using
 
 ```java
 Security.addProvider(new DirectoryKeystoreProvider());
 ```
 
-### Static Configuration Java 8
+### Static Installation Java 8
 
-The provider can be configured statically in the `java.security` file by adding the provider at the end
+The provider can be installed statically in the `java.security` file by adding the provider at the end
 
 ```
 security.provider.N=com.github.marschall.directorykeystore.DirectoryKeystoreProvider
@@ -46,9 +46,9 @@ This can be done
 
 Note that for this to work the provider JAR needs to be in the class path or extension folder.
 
-### Static Configuration Java 9+
+### Static Installation Java 9+
 
-The provider can be configured statically in the `java.security` file by adding the provider at the end
+The provider can be installed statically in the `java.security` file by adding the provider at the end
 
 ```
 security.provider.N=directory
