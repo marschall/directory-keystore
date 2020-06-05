@@ -3,7 +3,7 @@ Directory Keystore
 
 A Java keystore that allows you to place certificates in a directory. This is interesting for example in Linux where the system certificates are in `/etc/ssl/certs/` on Ubunut and ´/etc/pki/tls/certs´ on RHEL.
 
-## Usage
+## Usage from Java
 
 An instance of the provider can be acquired using
 
@@ -11,6 +11,17 @@ An instance of the provider can be acquired using
 Path etcSslCerts = Paths.get("/etc/ssl/certs");
 KeyStore keyStore = KeyStore.getInstance("directory"); // DirectoryKeystoreProvider.TYPE
 keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
+```
+
+## Usage from Configuration Files
+
+```
+echo "/etc/ssl/certs" > "/home/app/truststore"
+```
+
+```
+truststoreType="directory"
+truststoreFile="/home/app/truststore"
 ```
 
 ## Installation
