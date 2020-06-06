@@ -13,6 +13,15 @@ KeyStore keyStore = KeyStore.getInstance("directory"); // DirectoryKeystoreProvi
 keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
 ```
 
+certificate and certificate chain file extensions
+
+* `.pem`
+* `.crt`
+
+public and private key file extensions
+
+* `.key`
+
 ## Configuration
 
 The provider can be configured in two different ways
