@@ -18,6 +18,8 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
@@ -177,6 +179,16 @@ class DirectoryKeystoreTests {
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
     keyPairGenerator.initialize(null);
     KeyPair generateKeyPair = keyPairGenerator.generateKeyPair();
+  }
+
+  private static void generateEcKeys() throws GeneralSecurityException {
+    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+    keyPairGenerator.initialize(256);
+    KeyPair keyPair = keyPairGenerator.genKeyPair();
+
+    // 4
+    PublicKey publicKey = keyPair.getPublic();
+    PrivateKey privateKey = keyPair.getPrivate();
   }
 
   @Test
