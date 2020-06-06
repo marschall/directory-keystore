@@ -3,7 +3,16 @@ Directory Keystore
 
 A Java keystore that allows you to place certificates in a directory. This is interesting for example in Linux where the system certificates are in `/etc/ssl/certs/` on Ubunut and ´/etc/pki/tls/certs´ on RHEL.
 
-## Usage
+We read certificates and certificate chains file with the folowing extensions
+
+* `.pem`
+* `.crt`
+
+We read public and private key file extensions
+
+* `.key`
+
+## Usage from Java
 
 An instance of the provider can be acquired using
 
@@ -13,33 +22,37 @@ KeyStore keyStore = KeyStore.getInstance("directory"); // DirectoryKeystoreProvi
 keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
 ```
 
-certificate and certificate chain file extensions
 
-* `.pem`
-* `.crt`
 
-public and private key file extensions
+## Usage from Configuration Files
 
-* `.key`
+```
+echo "/etc/ssl/certs" > "/home/app/truststore"
+```
 
-## Configuration
+```
+truststoreType="directory"
+truststoreFile="/home/app/truststore"
+```
 
-The provider can be configured in two different ways
+## Installation
 
-1. programmatic configuration
-1. static configuration
+The provider can be installed in two different ways
 
-### Programmatic Configuration
+1. programmatic installation
+1. static installation
 
-The provider can be registered programmatically using
+### Programmatic Installation
+
+The provider can be installed programmatically using
 
 ```java
 Security.addProvider(new DirectoryKeystoreProvider());
 ```
 
-### Static Configuration Java 8
+### Static Installation Java 8
 
-The provider can be configured statically in the `java.security` file by adding the provider at the end
+The provider can be installed statically in the `java.security` file by adding the provider at the end
 
 ```
 security.provider.N=com.github.marschall.directorykeystore.DirectoryKeystoreProvider
@@ -55,9 +68,9 @@ This can be done
 
 Note that for this to work the provider JAR needs to be in the class path or extension folder.
 
-### Static Configuration Java 9+
+### Static Installation Java 9+
 
-The provider can be configured statically in the `java.security` file by adding the provider at the end
+The provider can be installed statically in the `java.security` file by adding the provider at the end
 
 ```
 security.provider.N=directory
