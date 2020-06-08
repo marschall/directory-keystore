@@ -169,7 +169,7 @@ class DirectoryKeystoreTests {
 
   private Certificate loadCertificate(Path certificateFile) throws IOException, GeneralSecurityException {
     CertificateFactory certificateFactory = DirectoryKeystore.getX509CertificateFactory();
-    return DirectoryKeystore.loadCertificates(certificateFactory, certificateFile).iterator().next();
+    return PemIO.loadCertificates(certificateFactory, certificateFile).iterator().next();
   }
 
   private static void generateKeysAndCertificate() throws GeneralSecurityException {
@@ -177,8 +177,8 @@ class DirectoryKeystoreTests {
     // https://www.mayrhofer.eu.org/post/create-x509-certs-in-java/
     // https://bfo.com/blog/2011/03/08/odds_and_ends_creating_a_new_x_509_certificate/
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-    keyPairGenerator.initialize(null);
-    KeyPair generateKeyPair = keyPairGenerator.generateKeyPair();
+    keyPairGenerator.initialize(2048, null);
+    KeyPair generatedKeyPair = keyPairGenerator.generateKeyPair();
   }
 
   private static void generateEcKeys() throws GeneralSecurityException {
