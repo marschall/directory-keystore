@@ -1,5 +1,7 @@
 package com.github.marschall.directorykeystore;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -17,38 +19,44 @@ import org.junit.jupiter.api.Test;
 
 class LoadPrivateKeyTest {
 
+
   @Test
   void test() throws InvalidKeySpecException, IOException {
     // https://en.wikipedia.org/wiki/PKCS_8
     // https://lapo.it/asn1js/#MIIBVgIBADANBgkqhkiG9w0BAQEFAASCAUAwggE8AgEAAkEAq7BFUpkGp3-LQmlQYx2eqzDV-xeG8kx_sQFV18S5JhzGeIJNA72wSeukEPojtqUyX2J0CciPBh7eqclQ2zpAswIDAQABAkAgisq4-zRdrzkwH1ITV1vpytnkO_NiHcnePQiOW0VUybPyHoGM_jf75C5xET7ZQpBe5kx5VHsPZj0CBb3b-wSRAiEA2mPWCBytosIU_ODRfq6EiV04lt6waE7I2uSPqIC20LcCIQDJQYIHQII-3YaPqyhGgqMexuuuGx-lDKD6_Fu_JwPb5QIhAKthiYcYKlL9h8bjDsQhZDUACPasjzdsDEdq8inDyLOFAiEAmCr_tZwA3qeAZoBzI10DGPIuoKXBd3nk_eBxPkaxlEECIQCNymjsoI7GldtujVnr1qT-3yedLfHKsrDVjIT3LsvTqw
 
-    // oids https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-gpnap/ff1a8675-0008-408c-ba5f-686a10389adc
-
     byte[] pkcs8 = loadKey(Paths.get("src/test/resources/sample-keystore/pkcs8/privateKey.key"));
-    try (InputStream inputStream = new ByteArrayInputStream(pkcs8)) {
-      int type = inputStream.read();
-      int tagClass = (type & 0b11_00_00_00) >> 6;
-      int valueEncoding = (type & 0b10_00_00) >> 5;
-      int tagNumber = (type & 0b1_11_11);
+    try (InputStream inputStream = new ByteArrayInputStream(pkcs8);
+         Asn1Reader reader = new Asn1Reader(inputStream)) {
 
-      int lengthOctet1 = inputStream.read();
-      if (lengthOctet1 == 0xFF) {
-        // TODO reserved
-      }
-      if (lengthOctet1 == 0x80) {
-        // TODO Indefinite
-      }
-      int length;
-      boolean isShort = (lengthOctet1 & 0b10_00_00_00) == 1;
-      if (isShort) {
-        length = lengthOctet1 & 0b1_11_11_11;
-      } else {
-        int lengthOctetCount = lengthOctet1 & 0b1_11_11_11;
-      }
+      TagType tagType = reader.readTagType();
+      assertEquals(TagType.SEQUENCE, tagType);
+      int sequenceLength = reader.readLength();
+      assertEquals(342, sequenceLength);
+
+      tagType = reader.readTagType();
+      assertEquals(TagType.INTEGER, tagType);
+      int version = reader.readInteger();
+      assertEquals(0, version);
+
+      tagType = reader.readTagType();
+      assertEquals(TagType.SEQUENCE, tagType);
+      sequenceLength = reader.readLength();
+      assertEquals(13, sequenceLength);
+
+      tagType = reader.readTagType();
+      assertEquals(TagType.OBJECT_IDENTIFIER, tagType);
+//      assertEquals(TagType.RELATIVE_OID, tagType);
+      Oid oid = reader.readOid();
+      assertEquals(Oid.RSA, oid);
+
+      tagType = reader.readTagType();
+      assertEquals(TagType.NULL, tagType);
+
+      tagType = reader.readTagType();
     }
 
   }
-
 
   private static byte[] loadKey(Path keyFile) throws IOException, InvalidKeySpecException {
     try (InputStream inputStream = Files.newInputStream(keyFile);
