@@ -48,7 +48,6 @@ final class Asn1Reader implements AutoCloseable {
   }
 
   private int readInteger(int octetCount) throws IOException {
-    // TODO preserve high bit
     if (octetCount > 4) {
       throw new IllegalArgumentException("length too large");
     }
@@ -59,8 +58,19 @@ final class Asn1Reader implements AutoCloseable {
       throw new IllegalArgumentException("negative length");
     }
     int value = 0;
+    boolean negative = false;
     for (int i = 0; i < octetCount; i++) {
-      value = (value << 8) | this.inputStream.read();
+      int nextOctet = this.inputStream.read();
+      if (i == 0) {
+        negative = (nextOctet & 0b10000000) != 0;
+        // clear the high bit
+        nextOctet &= 0b01111111;
+      }
+      value = (value << 8) | nextOctet;
+    }
+    if (negative) {
+      // set the high bit
+      value |= 0b10000000_00000000_00000000_00000000;
     }
     return value;
   }
@@ -77,6 +87,24 @@ final class Asn1Reader implements AutoCloseable {
     nodes.add(firstNode);
     int secondNode = firstNodes - (40 * firstNode);
     nodes.add(secondNode);
+
+    int read = 1;
+    while (read < length) {
+      int node = 0;
+
+      int octet = this.inputStream.read();
+      read += 1;
+      node = (node << 7) | (octet & 0b01111111);
+      boolean last = (octet & 0b10000000) == 0;
+      while (!last ) {
+        octet = this.inputStream.read();
+        read += 1;
+        node = (node << 7) | (octet & 0b01111111);
+        last = (octet & 0b10000000) == 0;
+      }
+
+      nodes.add(node);
+    }
 
     return new Oid(nodes.toArray());
   }

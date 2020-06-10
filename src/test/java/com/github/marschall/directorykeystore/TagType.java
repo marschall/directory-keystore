@@ -42,8 +42,6 @@ final class TagType {
 
   static TagType OBJECT_IDENTIFIER = new TagType(TAG_CLASS_UNIVERSAL, VALUE_ENCODING_PRIMITIVE, 0x06);
 
-  static TagType RELATIVE_OID  = new TagType(TAG_CLASS_UNIVERSAL, VALUE_ENCODING_PRIMITIVE, 0x0D);
-
   private final byte tagClass;
   private final byte valueEncoding;
   private final int tagNumber;
