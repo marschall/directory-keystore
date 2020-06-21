@@ -27,6 +27,9 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Methods related to loading from and saving to pem files.
+ */
 final class PemIO {
 
   private PemIO() {
