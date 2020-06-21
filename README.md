@@ -3,7 +3,7 @@ Directory Keystore
 
 A Java keystore that allows you to place certificates in a directory. This is interesting for example in Linux where the system certificates are in `/etc/ssl/certs/` on Ubunut and ´/etc/pki/tls/certs´ on RHEL.
 
-We read certificates and certificate chains file with the folowing extensions
+We read certificates and certificate chains file with the following extensions
 
 * `.pem`
 * `.crt`
@@ -22,9 +22,12 @@ KeyStore keyStore = KeyStore.getInstance("directory"); // DirectoryKeystoreProvi
 keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
 ```
 
+We recommend using the `#load` method that uses a `LoadStoreParameter` instead of the one that uses `InputStream` as you can directly pass a `Path` to a directory.
 
 
 ## Usage from Configuration Files
+
+In configuration files it is usually not possible to specify a custom `LoadStoreParameter`, instead often only a file can be specified. Unfortunately you can't directly specify the directory in which your certificates are located because on the Java side we would get a `InputStream` on the directory. Instead you have to create a file that contains a string with the directory that contains the certificates.
 
 ```
 echo "/etc/ssl/certs" > "/home/app/truststore"
