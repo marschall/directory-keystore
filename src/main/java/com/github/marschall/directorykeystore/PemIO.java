@@ -1,7 +1,7 @@
 package com.github.marschall.directorykeystore;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,6 +23,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Map;
@@ -36,12 +37,55 @@ final class PemIO {
     throw new AssertionError("not instantaible");
   }
 
-  // TODO parse PEM chain
   static Collection<? extends Certificate> loadCertificates(CertificateFactory factory, Path certificateFile) throws IOException, CertificateException {
     try (InputStream inputStream = Files.newInputStream(certificateFile);
-         BufferedInputStream buffered = new BufferedInputStream(inputStream)) {
-      return factory.generateCertificates(buffered);
+         Reader reader = new InputStreamReader(inputStream, StandardCharsets.US_ASCII);
+         BufferedReader buffered = new BufferedReader(reader)) {
+
+      Collection<Certificate> certificates = new ArrayList<>();
+      StringBuilder base64Buffer = new StringBuilder();
+      String line = buffered.readLine();
+      while (line != null) {
+        if (line.startsWith("-----BEGIN ")) {
+          byte[] der = decodePart(buffered, base64Buffer);
+          if (line.equals("-----BEGIN CERTIFICATE-----")) {
+            certificates.add(factory.generateCertificate(new ByteArrayInputStream(der)));
+          } else if (line.startsWith("-----BEGIN ") && line.endsWith(" KEY-----")) {
+            Map<String, KeyFactory> keyFactories = null; // FIXME
+            try {
+              loadKey(keyFactories, line, der);
+            } catch (InvalidKeySpecException e) {
+              throw new CertificateException("could not load key from:" + certificateFile, e);
+            }
+          } else {
+            throw new CertificateException("unexpected begin: '" + line + "'");
+          }
+        } else {
+          // ignore anything outside of -----BEGIN -----END
+        }
+        line = buffered.readLine();
+      }
+      return certificates;
     }
+  }
+
+  private static byte[] decodePart(BufferedReader reader, StringBuilder buffer) throws IOException {
+    buffer.setLength(0);
+    String line = reader.readLine();
+    while ((line != null) && !line.startsWith("-----END ")) {
+      buffer.append(line);
+      line = reader.readLine();
+    }
+
+    return Base64.getMimeDecoder().decode(buffer.toString());
+  }
+
+  private static Key loadKey(Map<String, KeyFactory> keyFactories, String begin, byte[] der) throws InvalidKeySpecException {
+    EncodedKeyType keyType = determineKeyType(begin);
+    KeySpec keySpec = keyType.getKeySpec(der);
+    KeyFactory keyFactory = keyFactories.computeIfAbsent(keyType.getKeyAlgorithm(), PemIO::getKeyFactory);
+
+    return keyType.getKeyLoader().loadKey(keyFactory, keySpec);
   }
 
   static Key loadKey(Map<String, KeyFactory> keyFactories, Path keyFile) throws IOException, InvalidKeySpecException {
@@ -51,7 +95,6 @@ final class PemIO {
 
       String begin = buffered.readLine();
       EncodedKeyType keyType = determineKeyType(begin);
-
 
       String line = buffered.readLine();
       StringBuilder base64Buffer = new StringBuilder();
@@ -83,15 +126,15 @@ final class PemIO {
         return new PKCS8EncodedPrivateKey();
       } else if (line.equals("-----BEGIN PUBLIC KEY-----")) {
         // TODO singleton
-//        return new PKCS8EncodedPublicKey();
+        // return new PKCS8EncodedPublicKey();
         return new X509EncodedPublicKey("RSA");
       } else if (line.endsWith("PRIVATE KEY-----")) {
         String keyType = line.substring("-----BEGIN ".length(), line.length() - " PRIVATE KEY-----".length());
-//        if (keyType.equals("EC")) {
-//          return new ECPrivateKey();
-//        } else {
+        // if (keyType.equals("EC")) {
+        //   return new ECPrivateKey();
+        // } else {
         return new X509EncodedPrivateKey(keyType);
-//        }
+        // }
       } else if (line.endsWith("PUBLIC KEY-----")) {
         String keyType = line.substring("-----BEGIN ".length(), line.length() - " PUBLIC KEY-----".length());
         return new X509EncodedPublicKey(keyType);
