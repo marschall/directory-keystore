@@ -1,6 +1,9 @@
 package com.github.marschall.directorykeystore;
 
 import static java.util.stream.Collectors.toList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyArray;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -166,6 +169,22 @@ class DirectoryKeystoreTests {
       String actual = new String(Files.readAllBytes(target.resolve(certificatePath.getFileName().toString())), StandardCharsets.US_ASCII);
       assertEquals(expected, actual);
     }
+  }
+  
+  @Test
+  void macOsKeystore() throws GeneralSecurityException, IOException {
+    Path certPem = Paths.get("/etc/ssl/cert.pem");
+    assumeTrue(Files.exists(certPem));
+    
+    KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
+    keyStore.load(new DirectorLoadStoreParameter(certPem.getParent()));
+    
+    assertTrue(keyStore.containsAlias("cert"));
+    assertTrue(keyStore.isCertificateEntry("cert"));
+
+    Certificate[] certificateChain = keyStore.getCertificateChain("cert");
+    assertNotNull(certificateChain);
+    assertThat(certificateChain, not(emptyArray()));
   }
 
   private Certificate loadCertificate(Path certificateFile) throws IOException, GeneralSecurityException {
