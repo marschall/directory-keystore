@@ -1,0 +1,2 @@
+openssl ecparam -name prime256v1 -genkey -noout -out private.ec.key
+openssl pkcs8 -topk8 -nocrypt -in private.ec.key -out private.pem

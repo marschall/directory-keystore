@@ -33,6 +33,7 @@ final class PemIO {
     throw new AssertionError("not instantaible");
   }
 
+  // TODO parse PEM chain
   static Collection<? extends Certificate> loadCertificates(CertificateFactory factory, Path certificateFile) throws IOException, CertificateException {
     try (InputStream inputStream = Files.newInputStream(certificateFile);
          BufferedInputStream buffered = new BufferedInputStream(inputStream)) {
@@ -46,7 +47,7 @@ final class PemIO {
          BufferedReader buffered = new BufferedReader(reader, 1024)) {
 
       String begin = buffered.readLine();
-      EncodedKeyKeyType keyType = determineKeyType(begin);
+      EncodedKeyType keyType = determineKeyType(begin);
 
 
       String line = buffered.readLine();
@@ -72,7 +73,7 @@ final class PemIO {
     }
   }
 
-  private static EncodedKeyKeyType determineKeyType(String line) throws InvalidKeySpecException {
+  private static EncodedKeyType determineKeyType(String line) throws InvalidKeySpecException {
     if (line.startsWith("-----BEGIN ")) {
       if (line.equals("-----BEGIN PRIVATE KEY-----")) {
         // TODO singleton
@@ -83,7 +84,11 @@ final class PemIO {
         return new X509EncodedPublicKey("RSA");
       } else if (line.endsWith("PRIVATE KEY-----")) {
         String keyType = line.substring("-----BEGIN ".length(), line.length() - " PRIVATE KEY-----".length());
+//        if (keyType.equals("EC")) {
+//          return new ECPrivateKey();
+//        } else {
         return new X509EncodedPrivateKey(keyType);
+//        }
       } else if (line.endsWith("PUBLIC KEY-----")) {
         String keyType = line.substring("-----BEGIN ".length(), line.length() - " PUBLIC KEY-----".length());
         return new X509EncodedPublicKey(keyType);
@@ -94,7 +99,7 @@ final class PemIO {
   }
 
 
-  static abstract class EncodedKeyKeyType {
+  static abstract class EncodedKeyType {
 
     abstract String getKeyAlgorithm();
 
@@ -104,7 +109,7 @@ final class PemIO {
 
   }
 
-  static abstract class PKCS8EncodedKey extends EncodedKeyKeyType {
+  static abstract class PKCS8EncodedKey extends EncodedKeyType {
 
     @Override
     String getKeyAlgorithm() {
@@ -137,7 +142,7 @@ final class PemIO {
 
   }
 
-  static abstract class X509EncodedKey extends EncodedKeyKeyType {
+  static abstract class X509EncodedKey extends EncodedKeyType {
 
     private final String keyAlgorithm;
     private static final MethodHandle NEW_X509_ENCODED_KEY_SPEC;
@@ -204,6 +209,25 @@ final class PemIO {
     @Override
     KeyLoader getKeyLoader() {
       return KeyLoader.PUBLIC_KEY;
+    }
+
+  }
+
+  static final class ECPrivateKey extends EncodedKeyType {
+
+    @Override
+    String getKeyAlgorithm() {
+      return "EC";
+    }
+
+    @Override
+    KeySpec getKeySpec(byte[] encoded) {
+      return new PKCS8EncodedKeySpec(encoded);
+    }
+
+    @Override
+    KeyLoader getKeyLoader() {
+      return KeyLoader.PRIVATE_KEY;
     }
 
   }

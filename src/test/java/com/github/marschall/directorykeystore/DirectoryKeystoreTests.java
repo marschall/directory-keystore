@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
+import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -84,9 +85,9 @@ class DirectoryKeystoreTests {
 
   @Test
   void loadCertificateChain() throws GeneralSecurityException, IOException {
-    Path certificateDirectory = Paths.get("src", "test", "resources", "sample-keystore", "certificate-chains");
+    Path certificateChainsDirectory = Paths.get("src", "test", "resources", "sample-keystore", "certificate-chains");
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
-    keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
+    keyStore.load(new DirectorLoadStoreParameter(certificateChainsDirectory));
 
     assertEquals(1, keyStore.size());
     assertEquals(Arrays.asList("ca-certificates"), enumerationToList(keyStore.aliases()));
@@ -196,5 +197,20 @@ class DirectoryKeystoreTests {
     assertEquals("abc", DirectoryKeystore.getAlias("abc.pem"));
     assertEquals("abc", DirectoryKeystore.getAlias("abc.crt"));
   }
+
+  @Test
+  void ecPrivateKey() throws GeneralSecurityException, IOException {
+    Path certificateDirectory = Paths.get("src", "test", "resources", "sample-keystore", "ec-private-key");
+    KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
+    keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
+
+    String keyAlias = "private.ec";
+    assertTrue(keyStore.containsAlias(keyAlias));
+    assertTrue(keyStore.isKeyEntry(keyAlias));
+
+    Key key = keyStore.getKey(keyAlias, null);
+    assertNotNull(key);
+  }
+
 
 }

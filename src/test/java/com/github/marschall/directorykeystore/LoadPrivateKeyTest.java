@@ -94,6 +94,42 @@ class LoadPrivateKeyTest {
 
   }
 
+  @Test
+  void test3() throws InvalidKeySpecException, IOException {
+    // https://superuser.com/questions/1103401/generate-an-ecdsa-key-and-csr-with-openssl
+    // https://wiki.openssl.org/index.php/Command_Line_Elliptic_Curve_Operations
+    byte[] pkcs8 = loadKey(Paths.get("src/test/resources/sample-keystore/ecdsa-pksc8/ecdsakey.pem"));
+    try (InputStream inputStream = new ByteArrayInputStream(pkcs8);
+            Asn1Reader reader = new Asn1Reader(inputStream)) {
+
+      TagType tagType = reader.readTagType();
+      assertEquals(TagType.SEQUENCE, tagType);
+      int sequenceLength = reader.readLength();
+      assertEquals(220, sequenceLength);
+
+      tagType = reader.readTagType();
+      assertEquals(TagType.INTEGER, tagType);
+      int version = reader.readInteger();
+      assertEquals(0, version);
+
+      tagType = reader.readTagType();
+      assertEquals(TagType.SEQUENCE, tagType);
+      sequenceLength = reader.readLength();
+      assertEquals(13, sequenceLength);
+
+      tagType = reader.readTagType();
+      assertEquals(TagType.OBJECT_IDENTIFIER, tagType);
+      Oid oid = reader.readOid();
+      assertEquals(Oid.RSA, oid);
+
+      tagType = reader.readTagType();
+      assertEquals(TagType.NULL, tagType);
+
+      tagType = reader.readTagType();
+    }
+
+  }
+
   private static byte[] loadKey(Path keyFile) throws IOException, InvalidKeySpecException {
     try (InputStream inputStream = Files.newInputStream(keyFile);
          Reader reader = new InputStreamReader(inputStream, StandardCharsets.US_ASCII);
