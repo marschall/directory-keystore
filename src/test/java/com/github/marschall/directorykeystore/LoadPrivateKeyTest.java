@@ -17,6 +17,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Base64;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class LoadPrivateKeyTest {
@@ -95,10 +96,12 @@ class LoadPrivateKeyTest {
   }
 
   @Test
+  @Disabled("ec keys not yet supported")
   void test3() throws InvalidKeySpecException, IOException {
     // https://superuser.com/questions/1103401/generate-an-ecdsa-key-and-csr-with-openssl
     // https://wiki.openssl.org/index.php/Command_Line_Elliptic_Curve_Operations
     byte[] pkcs8 = loadKey(Paths.get("src/test/resources/sample-keystore/ecdsa-pksc8/ecdsakey.pem"));
+//    byte[] pkcs8 = loadKey(Paths.get("src/test/resources/sample-keystore/ecdsa-pkcs8/private.ec.key"));
     try (InputStream inputStream = new ByteArrayInputStream(pkcs8);
             Asn1Reader reader = new Asn1Reader(inputStream)) {
 

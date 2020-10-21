@@ -34,6 +34,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder;
@@ -170,15 +171,15 @@ class DirectoryKeystoreTests {
       assertEquals(expected, actual);
     }
   }
-  
+
   @Test
   void macOsKeystore() throws GeneralSecurityException, IOException {
     Path certPem = Paths.get("/etc/ssl/cert.pem");
     assumeTrue(Files.exists(certPem));
-    
+
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
     keyStore.load(new DirectorLoadStoreParameter(certPem.getParent()));
-    
+
     assertTrue(keyStore.containsAlias("cert"));
     assertTrue(keyStore.isCertificateEntry("cert"));
 
@@ -218,6 +219,7 @@ class DirectoryKeystoreTests {
   }
 
   @Test
+  @Disabled("ec keys not yet supported")
   void ecPrivateKey() throws GeneralSecurityException, IOException {
     Path certificateDirectory = Paths.get("src", "test", "resources", "sample-keystore", "ec-private-key");
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);

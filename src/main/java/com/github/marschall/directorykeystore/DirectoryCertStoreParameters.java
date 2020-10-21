@@ -2,13 +2,12 @@ package com.github.marschall.directorykeystore;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyStore.LoadStoreParameter;
 import java.security.cert.CertStoreParameters;
 import java.util.Objects;
 
 /**
  * Specifies how to load a cert store.
- * 
+ *
  * @see java.security.cert.CertStore#getInstance(String, CertStoreParameters)
  */
 public final class DirectoryCertStoreParameters implements CertStoreParameters {
@@ -17,7 +16,7 @@ public final class DirectoryCertStoreParameters implements CertStoreParameters {
 
   /**
    * Constructs a new {@link DirectoryCertStoreParameters}
-   * 
+   *
    * @param certificateDirectory the directory from which to load certificates,
    *                             must exist, must be a directory, must not be null,
    *                             can be on any file system
