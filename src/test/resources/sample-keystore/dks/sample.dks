@@ -1,0 +1,10 @@
+domain app1 {
+
+    keystore app1_truststore
+        keystoreType="directory"
+        keystoreURI="${user.dir}/src/test/resources/sample-keystore/dks/additional.keystore";
+
+    keystore system_truststore 
+        keystoreURI="${java.home}/lib/security/cacerts";
+
+};
