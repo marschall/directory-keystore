@@ -1,7 +1,7 @@
 Directory Keystore
 ==================
 
-A Java keystore that allows you to place certificates in a directory. This is interesting for example in Linux where the system certificates are in `/etc/ssl/certs/` on Ubunut and ´/etc/pki/tls/certs´ on RHEL.
+A Java keystore that allows you to place certificates in a directory. This is interesting for example in Linux where the system certificates are in `/etc/ssl/certs/` on Ubunut and `/etc/pki/tls/certs` on RHEL.
 
 We read certificates and certificate chains file with the following extensions
 
