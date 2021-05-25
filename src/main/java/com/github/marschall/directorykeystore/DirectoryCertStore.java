@@ -21,6 +21,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * A certstore implementation that loads certificates and keys from a directory.
+ *
+ * @see DirectoryCertStoreParameters
+ */
 public final class DirectoryCertStore extends CertStoreSpi {
 
   private final Path directory;

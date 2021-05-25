@@ -1,7 +1,13 @@
 package com.github.marschall.directorykeystore;
 
+import java.security.KeyStore;
 import java.security.Provider;
+import java.security.cert.CertStore;
 
+/**
+ * A security provider that a registers directory based {@link KeyStore}
+ * and {@link CertStore} implementations.
+ */
 public final class DirectoryKeystoreProvider extends Provider {
 
   /**

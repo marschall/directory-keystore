@@ -37,6 +37,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * A keystore implementation that loads certificates and keys from a directory.
+ *
+ * @see DirectoryLoadStoreParameter
+ */
 public final class DirectoryKeystore extends KeyStoreSpi {
 
   // TODO watch service
