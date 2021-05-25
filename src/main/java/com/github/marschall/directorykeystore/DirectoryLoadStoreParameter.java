@@ -12,12 +12,12 @@ import java.util.Objects;
  * @see java.security.KeyStore#load(LoadStoreParameter)
  * @see java.security.KeyStore#store(LoadStoreParameter)
  */
-public final class DirectorLoadStoreParameter implements LoadStoreParameter {
+public final class DirectoryLoadStoreParameter implements LoadStoreParameter {
 
   private final Path directory;
 
   /**
-   * Constructs a new {@link DirectorLoadStoreParameter}
+   * Constructs a new {@link DirectoryLoadStoreParameter}
    * 
    * @param certificateDirectory the directory from which to load and store
    *                             certificates and keys,
@@ -26,7 +26,7 @@ public final class DirectorLoadStoreParameter implements LoadStoreParameter {
    * @throws NullPointerException if {@code certificateDirectory} is {@code null}
    * @throws IllegalArgumentException if {@code certificateDirectory} is {@code null}
    */
-  public DirectorLoadStoreParameter(Path certificateDirectory) {
+  public DirectoryLoadStoreParameter(Path certificateDirectory) {
     Objects.requireNonNull(certificateDirectory, "certificateDirectory");
     if (!Files.isDirectory(certificateDirectory)) {
       throw new IllegalArgumentException("certificateDirectory must be a directory");

@@ -237,7 +237,7 @@ public final class DirectoryKeystore extends KeyStoreSpi {
       // intentionally don't close as caller has to close
       BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream), 1024); // use default charset
       String location = bufferedReader.readLine();
-      LoadStoreParameter loadStoreParameter = new DirectorLoadStoreParameter(Paths.get(location));
+      LoadStoreParameter loadStoreParameter = new DirectoryLoadStoreParameter(Paths.get(location));
       this.engineLoad(loadStoreParameter);
     }
   }
@@ -248,7 +248,7 @@ public final class DirectoryKeystore extends KeyStoreSpi {
       this.initializeEmpty();
       return;
     }
-    Path directory = ((DirectorLoadStoreParameter) param).getDirectory();
+    Path directory = ((DirectoryLoadStoreParameter) param).getDirectory();
 
     Map<String, KeystoreEntry> loadedEntries = new HashMap<>();
 
@@ -346,10 +346,10 @@ public final class DirectoryKeystore extends KeyStoreSpi {
   public void engineStore(LoadStoreParameter param)
           throws IOException, NoSuchAlgorithmException, CertificateException {
     Objects.requireNonNull(param, "param");
-    if (!(param instanceof DirectorLoadStoreParameter)) {
-      throw new IllegalArgumentException("parameter must be a " + DirectorLoadStoreParameter.class);
+    if (!(param instanceof DirectoryLoadStoreParameter)) {
+      throw new IllegalArgumentException("parameter must be a " + DirectoryLoadStoreParameter.class);
     }
-    Path directory = ((DirectorLoadStoreParameter) param).getDirectory();
+    Path directory = ((DirectoryLoadStoreParameter) param).getDirectory();
     Files.createDirectories(directory);
 
     // delete current keystore entries

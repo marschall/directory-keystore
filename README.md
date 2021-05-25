@@ -1,5 +1,14 @@
-Directory Keystore
+Directory Keystore [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.marschall/directory-keystore/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.marschall/directory-keystore) [![Javadocs](https://www.javadoc.io/badge/com.github.marschall/directory-keystore.svg)](https://www.javadoc.io/doc/com.github.marschall/directory-keystore)
 ==================
+
+
+```xml
+<dependency>
+    <groupId>com.github.marschall</groupId>
+    <artifactId>directory-keystore</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
 
 A Java keystore that allows you to place certificates in a directory. This is interesting for example in Linux where the system certificates are in `/etc/ssl/certs/` on Ubunut and `/etc/pki/tls/certs` on RHEL.
 
@@ -19,7 +28,7 @@ An instance of the provider can be acquired using
 ```java
 Path etcSslCerts = Paths.get("/etc/ssl/certs");
 KeyStore keyStore = KeyStore.getInstance("directory"); // DirectoryKeystoreProvider.TYPE
-keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
+keyStore.load(new DirectoryLoadStoreParameter(certificateDirectory));
 ```
 
 We recommend using the `#load` method that uses a `LoadStoreParameter` instead of the one that uses `InputStream` as you can directly pass a `Path` to a directory.

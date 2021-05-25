@@ -61,7 +61,7 @@ class DirectoryKeystoreTests {
 
   private void checkKeystoreDirectory(Path certificateDirectory) throws GeneralSecurityException, IOException {
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
-    keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
+    keyStore.load(new DirectoryLoadStoreParameter(certificateDirectory));
 
     assertTrue(keyStore.size() > 0);
     Enumeration<String> aliases = keyStore.aliases();
@@ -91,7 +91,7 @@ class DirectoryKeystoreTests {
   void loadCertificateChain() throws GeneralSecurityException, IOException {
     Path certificateChainsDirectory = Paths.get("src", "test", "resources", "sample-keystore", "certificate-chains");
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
-    keyStore.load(new DirectorLoadStoreParameter(certificateChainsDirectory));
+    keyStore.load(new DirectoryLoadStoreParameter(certificateChainsDirectory));
 
     assertEquals(1, keyStore.size());
     assertEquals(Arrays.asList("ca-certificates"), enumerationToList(keyStore.aliases()));
@@ -113,7 +113,7 @@ class DirectoryKeystoreTests {
   void loadCertificateAndPrivateKey() throws GeneralSecurityException, IOException {
     Path certificateDirectory = Paths.get("src", "test", "resources", "sample-keystore", "certificate-and-private-key");
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
-    keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
+    keyStore.load(new DirectoryLoadStoreParameter(certificateDirectory));
   }
 
   @Test
@@ -125,7 +125,7 @@ class DirectoryKeystoreTests {
       Files.copy(certificate, source.resolve(certificate.getFileName().toString()));
 
       KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
-      keyStore.load(new DirectorLoadStoreParameter(source));
+      keyStore.load(new DirectoryLoadStoreParameter(source));
 
       assertEquals(1, keyStore.size());
       assertEquals(Arrays.asList("letsencrypt-org"), enumerationToList(keyStore.aliases()));
@@ -155,7 +155,7 @@ class DirectoryKeystoreTests {
       Path certificatePath = Paths.get("src", "test", "resources", "sample-keystore", "single-certificate", "letsencrypt-org.pem");
       Certificate certificate = this.loadCertificate(certificatePath);
       keyStore.setCertificateEntry("letsencrypt-org", certificate);
-      keyStore.store(new DirectorLoadStoreParameter(target));
+      keyStore.store(new DirectoryLoadStoreParameter(target));
 
       List<String> entries;
       try (Stream<Path> stream = Files.list(target)) {
@@ -178,7 +178,7 @@ class DirectoryKeystoreTests {
     assumeTrue(Files.exists(certPem));
 
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
-    keyStore.load(new DirectorLoadStoreParameter(certPem.getParent()));
+    keyStore.load(new DirectoryLoadStoreParameter(certPem.getParent()));
 
     assertTrue(keyStore.containsAlias("cert"));
     assertTrue(keyStore.isCertificateEntry("cert"));
@@ -223,7 +223,7 @@ class DirectoryKeystoreTests {
   void ecPrivateKey() throws GeneralSecurityException, IOException {
     Path certificateDirectory = Paths.get("src", "test", "resources", "sample-keystore", "ec-private-key");
     KeyStore keyStore = KeyStore.getInstance(DirectoryKeystoreProvider.TYPE);
-    keyStore.load(new DirectorLoadStoreParameter(certificateDirectory));
+    keyStore.load(new DirectoryLoadStoreParameter(certificateDirectory));
 
     String keyAlias = "private.ec";
     assertTrue(keyStore.containsAlias(keyAlias));
