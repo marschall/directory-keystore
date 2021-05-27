@@ -25,7 +25,7 @@ public final class DirectoryKeystoreProvider extends Provider {
    * by JCA.
    */
   public DirectoryKeystoreProvider() {
-    super(NAME, 0.1d, "directory (KeyStore)");
+    super(NAME, 1.0d, "directory (KeyStore)");
     this.put("KeyStore." + TYPE, DirectoryKeystore.class.getName());
     this.put("CertStore." + TYPE, DirectoryCertStore.class.getName());
   }
