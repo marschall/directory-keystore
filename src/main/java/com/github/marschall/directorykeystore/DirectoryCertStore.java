@@ -35,6 +35,7 @@ public final class DirectoryCertStore extends CertStoreSpi {
    *
    * @param parameters the parameters which contain the information about where to load the certificates from,
    *                   must be an instance of {@link DirectoryCertStoreParameters}
+   * @throws InvalidAlgorithmParameterException if {@code parameters} is not an instance of {@link DirectoryCertStoreParameters}
    */
   public DirectoryCertStore(CertStoreParameters parameters) throws InvalidAlgorithmParameterException {
     super(parameters);
