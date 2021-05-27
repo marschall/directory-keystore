@@ -24,7 +24,7 @@ class DomainKeystoreTests {
   @Test
   void load() throws GeneralSecurityException, IOException, URISyntaxException {
     KeyStore keyStore = KeyStore.getInstance("DKS");
-    URI dksUri = new URI(DomainKeystoreTests.class.getClassLoader().getResource("sample-keystore/dks/sample.dks").toExternalForm() + "#app1");
+    URI dksUri = new URI(DomainKeystoreTests.class.getClassLoader().getResource("sample-keystore/dks/sample.dks").toExternalForm() + "#junit");
     Map<String, ProtectionParameter> protectionParams = Collections.emptyMap();
     LoadStoreParameter loadStoreParameter = new DomainLoadStoreParameter(dksUri, protectionParams);
     keyStore.load(loadStoreParameter);

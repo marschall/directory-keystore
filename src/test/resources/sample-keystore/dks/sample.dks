@@ -1,4 +1,4 @@
-domain app1 {
+domain junit {
 
     keystore app1_truststore
         keystoreType="directory"
