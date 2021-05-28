@@ -101,3 +101,15 @@ The provider uses the ServiceLoader mechanism therefore using the `directory` st
 Note that for this to work the provider JAR needs to be in the class path or module path.
 
 
+## Usage as a JVM Default Truststore
+
+This libray can be used as a JVM default truststore replacing the built-in one. To do this you need to set the `java.security.properties`, `javax.net.ssl.trustStore` and `javax.net.ssl.trustStoreType` system properties
+
+```
+-Djava.security.properties=$(pwd)/conf/additional.java.security \
+-Djavax.net.ssl.trustStore=$(pwd)/conf/etcsslcerts \
+-Djavax.net.ssl.trustStoreType=directory
+```
+
+Check out [marschall/directory-keystore-demo](https://github.com/marschall/directory-keystore-demo) for an example.
+
