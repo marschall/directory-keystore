@@ -29,12 +29,13 @@ class DomainKeystoreTests {
     LoadStoreParameter loadStoreParameter = new DomainLoadStoreParameter(dksUri, protectionParams);
     keyStore.load(loadStoreParameter);
 
+    List<String> aliases = Collections.list(keyStore.aliases());
+
     assertTrue(keyStore.isCertificateEntry("cert")); // from the directory truststore
 
-    assertTrue(keyStore.isCertificateEntry("system_truststore letsencryptisrgx1 [jdk]")); // from the JDK truststore
-    assertTrue(keyStore.isCertificateEntry("system_truststore digicertglobalrootca [jdk]")); // from the JDK truststore
+    assertTrue(keyStore.isCertificateEntry("system_truststore letsencryptisrgx1 [jdk]"), () -> "alias missing from: " + aliases); // from the JDK truststore
+    assertTrue(keyStore.isCertificateEntry("system_truststore digicertglobalrootca [jdk]"), () -> "alias missing from: " + aliases); // from the JDK truststore
 
-    List<String> aliases = Collections.list(keyStore.aliases());
     assertThat(aliases, hasSize(greaterThan(10))); // from the JDK truststore
   }
 
