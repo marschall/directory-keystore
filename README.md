@@ -113,3 +113,31 @@ This libray can be used as a JVM default truststore replacing the built-in one. 
 
 Check out [marschall/directory-keystore-demo](https://github.com/marschall/directory-keystore-demo) for an example.
 
+## Usage with DKS
+
+If you want to combine the default Java truststore with the truststore of your Linux distribution [DKS](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/security/DomainLoadStoreParameter.html) keystore. You need to create a configuration file similar to the following one:
+
+```
+domain system_plus_java {
+
+    keystore system_truststore // the trustore form the Linux distribution
+        keystoreType="directory"
+        keystoreURI="${user.dir}/conf/etcsslcerts"; // contains the name of the actual folder, for example /etc/ssl/certs
+
+    keystore java_truststore // the JDK default truststore
+        keystoreURI="${java.home}/lib/security/cacerts";
+
+};
+```
+
+And you can then load the keystore with code similar to this:
+
+```java
+KeyStore keyStore = KeyStore.getInstance("DKS");
+URI dksUri = new URI(DomainKeystoreTests.class.getClassLoader().getResource("conf/combined.dks").toExternalForm() + "#system_plus_java");
+Map<String, ProtectionParameter> protectionParams = Collections.emptyMap();
+LoadStoreParameter loadStoreParameter = new DomainLoadStoreParameter(dksUri, protectionParams);
+keyStore.load(loadStoreParameter);
+```
+
+
