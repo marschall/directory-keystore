@@ -113,7 +113,7 @@ This libray can be used as a JVM default truststore replacing the built-in one. 
 
 Check out [marschall/directory-keystore-demo](https://github.com/marschall/directory-keystore-demo) for an example.
 
-## Usage with DKS
+## Combining with the Java Default Truststore
 
 If you want to combine the default Java truststore with the truststore of your Linux distribution [DKS](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/security/DomainLoadStoreParameter.html) keystore. You need to create a configuration file similar to the following one:
 
