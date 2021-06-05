@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.marschall</groupId>
   <artifactId>directory-keystore</artifactId>
-  <version>1.0.2-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
   
   <name>Directory Keystore</name>
   <inceptionYear>2020</inceptionYear>
@@ -111,6 +111,32 @@
         <configuration>
           <release>8</release>
         </configuration>
+        <executions>
+          <execution>
+            <id>compile-java-9</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <release>9</release>
+              <compileSourceRoots>
+                <compileSourceRoot>${project.basedir}/src/main/java9</compileSourceRoot>
+              </compileSourceRoots>
+              <multiReleaseOutput>true</multiReleaseOutput>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Multi-Release>true</Multi-Release>
+            </manifestEntries>
+          </archive>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -141,28 +167,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>codes.rafael.modulemaker</groupId>
-        <artifactId>modulemaker-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>make-module</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <name>com.github.marschall.directorykeystore</name>
-          <exports>com.github.marschall.directorykeystore</exports>
-          <provides>
-            <provide>
-              <services>java.security.Provider</services>
-              <providers>com.github.marschall.directorykeystore.DirectoryKeystoreProvider</providers>
-            </provide>
-          </provides>
-        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-source-plugin</artifactId>
@@ -217,11 +221,6 @@
           <version>2.5.2</version>
         </plugin>
         <plugin>
-          <groupId>codes.rafael.modulemaker</groupId>
-          <artifactId>modulemaker-maven-plugin</artifactId>
-          <version>1.7</version>
-        </plugin>
-        <plugin>
           <artifactId>maven-site-plugin</artifactId>
           <version>3.9.0</version>
         </plugin>
@@ -273,19 +272,6 @@
                     <versionRange>[1.0.1,)</versionRange>
                     <goals>
                       <goal>jandex</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore />
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>codes.rafael.modulemaker</groupId>
-                    <artifactId>modulemaker-maven-plugin</artifactId>
-                    <versionRange>[1.7,)</versionRange>
-                    <goals>
-                      <goal>make-module</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>

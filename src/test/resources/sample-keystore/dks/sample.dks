@@ -2,7 +2,7 @@ domain junit {
 
     keystore app1_truststore
         keystoreType="directory"
-        keystoreURI="${user.dir}/src/test/resources/sample-keystore/dks/additional.keystore";
+        keystoreURI="${user.dir}/src/test/resources/sample-keystore/dks/additional.redirect";
 
     keystore system_truststore 
         keystoreURI="${java.home}/lib/security/cacerts";

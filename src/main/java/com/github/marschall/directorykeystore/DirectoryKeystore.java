@@ -241,7 +241,7 @@ public final class DirectoryKeystore extends KeyStoreSpi {
     } else {
       // intentionally don't close as caller has to close
       BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream), 1024); // use default charset
-      String location = bufferedReader.readLine();
+      String location = PropertyReplacer.replaceProperties(bufferedReader.readLine());
       LoadStoreParameter loadStoreParameter = new DirectoryLoadStoreParameter(Paths.get(location));
       this.engineLoad(loadStoreParameter);
     }
@@ -416,6 +416,8 @@ public final class DirectoryKeystore extends KeyStoreSpi {
     FileTime creationTime = (FileTime) attributes.get("creationTime");
     return Date.from(creationTime.toInstant());
   }
+
+  // TODO implement missing methods
 
   static abstract class KeystoreEntry {
 

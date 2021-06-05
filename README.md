@@ -6,7 +6,7 @@ Directory Keystore [![Maven Central](https://maven-badges.herokuapp.com/maven-ce
 <dependency>
     <groupId>com.github.marschall</groupId>
     <artifactId>directory-keystore</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -23,6 +23,10 @@ We read public and private key file extensions
 
 ## Usage from Java
 
+### Using LoadStoreParameter
+
+We recommend using the `#load` method that uses a `LoadStoreParameter` instead of the one that uses `InputStream` as you can directly pass a `Path` to a directory.
+
 An instance of the provider can be acquired using
 
 ```java
@@ -31,8 +35,16 @@ KeyStore keyStore = KeyStore.getInstance("directory"); // DirectoryKeystoreProvi
 keyStore.load(new DirectoryLoadStoreParameter(certificateDirectory));
 ```
 
-We recommend using the `#load` method that uses a `LoadStoreParameter` instead of the one that uses `InputStream` as you can directly pass a `Path` to a directory.
+### Using InputStream
 
+If you instead want to load the keystore using and `InputStream` you have to use a redirect files that points to the actual location of the folder containing the certificates.
+
+```java
+KeyStore keyStore = KeyStore.getInstance("directory"); // DirectoryKeystoreProvider.TYPE
+try (InputStream inputStream = Files.newInputStream(Paths.get("conf/keystore.redirect"))) {
+  keyStore.load(inputStream);
+}
+```
 
 ## Usage from Configuration Files
 
