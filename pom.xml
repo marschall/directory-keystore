@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.marschall</groupId>
   <artifactId>directory-keystore</artifactId>
-  <version>1.1.0-SNAPSHOT</version>
+  <version>1.1.0</version>
   
   <name>Directory Keystore</name>
   <inceptionYear>2020</inceptionYear>
@@ -15,7 +15,7 @@
     <connection>scm:git:git@github.com:marschall/directory-keystore.git</connection>
     <developerConnection>scm:git:git@github.com:marschall/directory-keystore.git</developerConnection>
     <url>${project.url}</url>
-    <tag>HEAD</tag>
+    <tag>1.1.0</tag>
   </scm>
 
   <dependencyManagement>
